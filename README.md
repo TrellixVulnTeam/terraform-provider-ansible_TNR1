@@ -62,3 +62,8 @@ _Note:_ Acceptance tests create real resources, and often cost money to run.
 ```shell
 make testacc
 ```
+
+## Dependencies
+
+- Ansible portable
+- Python

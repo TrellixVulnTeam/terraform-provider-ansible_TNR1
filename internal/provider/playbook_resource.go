@@ -152,5 +152,10 @@ func (r exampleResource) Delete(ctx context.Context, req tfsdk.DeleteResourceReq
 }
 
 func (r exampleResource) ImportState(ctx context.Context, req tfsdk.ImportResourceStateRequest, resp *tfsdk.ImportResourceStateResponse) {
-	tfsdk.ResourceImportStatePassthroughID(ctx, tftypes.NewAttributePath().WithAttributeName("id"), req, resp)
+	tfsdk.ResourceImportStatePassthroughID(
+		ctx,
+		tftypes.NewAttributePath().WithAttributeName("id"),
+		req,
+		resp,
+	)
 }
