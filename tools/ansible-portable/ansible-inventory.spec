@@ -1,4 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
+from PyInstaller.utils.hooks import collect_all
+
+datas = [('ansible/ansible', 'ansible')]
+binaries = []
+hiddenimports = []
+tmp_ret = collect_all('pty')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
+tmp_ret = collect_all('email')
+datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 block_cipher = None
@@ -7,9 +16,9 @@ block_cipher = None
 a = Analysis(
     ['ansible-inventory/__main__.py'],
     pathex=[],
-    binaries=[],
-    datas=[('ansible/ansible/config/base.yml', 'ansible/config'), ('ansible/ansible/config/ansible_builtin_runtime.yml', 'ansible/config'), ('ansible/ansible/cli/inventory.py', 'ansible/cli')],
-    hiddenimports=[],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -31,7 +40,7 @@ exe = EXE(
     name='ansible-inventory',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=True,
+    strip=False,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,

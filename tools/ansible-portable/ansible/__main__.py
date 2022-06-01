@@ -112,7 +112,7 @@ if __name__ == '__main__':
                     sub = target[1]
                     myclass = "%sCLI" % sub.capitalize()
                     mycli = getattr(__import__("ansible.cli.%s" % sub, fromlist=[myclass]), myclass)
-            elif me == 'ansible':
+            elif me == 'ansiblex':
                 from ansible.cli.adhoc import AdHocCLI as mycli
             else:
                 raise AnsibleError("Unknown Ansible alias: %s" % me)

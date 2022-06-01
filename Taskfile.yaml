@@ -1,8 +1,7 @@
 version: "3"
 
 vars:
-  ANSIBLE_OPTION: --clean --onefile --noconfirm --ascii --strip --add-data ansible/ansible/config/base.yml:ansible/config --add-data ansible/ansible/config/ansible_builtin_runtime.yml:ansible/config
-  ANSIBLE_EXTRAS_PIP: uuid
+  ANSIBLE_BUILD_OPTION: --clean --onefile --noconfirm --collect-all pty --collect-all email --add-data ansible/ansible:ansible # --ascii --strip
 
 tasks:
   default:
@@ -13,34 +12,22 @@ tasks:
     cmds:
       - pip install pyinstaller
 
-  clean:
-    cmds:
-      - rm -rf .tmp/*
-      - find . -regex '^.*\(__pycache__\|\.py[co]\)$' -delete
-
-  ansible-download:
-    cmds:
-      - wget https://github.com/ownport/portable-ansible/releases/download/v0.5.0/portable-ansible-v0.5.0-py3.tar.bz2 -O ansible.tar.bz2
-      - tar -xjf ansible.tar.bz2
-      - rm -rf ansible.tar.bz2
-      - for l in config console doc galaxy inventory playbook pull vault;do ln -s ansible ansible-$l;done
-      - pip install -t ansible/extras {{.ANSIBLE_EXTRAS_PIP}}
-    dir: .tmp
-    status:
-      - python ansible localhost -m ping
-
   ansible-build:
     cmds:
-      - pyinstaller ansible/__main__.py -n ansible --clean --onefile --noconfirm --ascii --strip
-      - pyinstaller ansible-config/__main__.py -n ansible-config {{.ANSIBLE_OPTION}} --add-data ansible/ansible/cli/config.py:ansible/cli
-      - pyinstaller ansible-console/__main__.py -n ansible-console {{.ANSIBLE_OPTION}} --add-data ansible/ansible/cli/console.py:ansible/cli
-      - pyinstaller ansible-doc/__main__.py -n ansible-doc {{.ANSIBLE_OPTION}} --add-data ansible/ansible/cli/doc.py:ansible/cli
-      - pyinstaller ansible-galaxy/__main__.py -n ansible-galaxy {{.ANSIBLE_OPTION}} --add-data ansible/ansible/cli/galaxy.py:ansible/cli
-      - pyinstaller ansible-inventory/__main__.py -n ansible-inventory {{.ANSIBLE_OPTION}} --add-data ansible/ansible/cli/inventory.py:ansible/cli
-      - pyinstaller ansible-playbook/__main__.py -n ansible-playbook {{.ANSIBLE_OPTION}} --add-data ansible/ansible/cli/playbook.py:ansible/cli
-      - pyinstaller ansible-pull/__main__.py -n ansible-pull {{.ANSIBLE_OPTION}} --add-data ansible/ansible/cli/pull.py:ansible/cli
-      - pyinstaller ansible-vault/__main__.py -n ansible-vault {{.ANSIBLE_OPTION}} --add-data ansible/ansible/cli/vault.py:ansible/cli
-    dir: .tmp
+      - pyinstaller ansible/__main__.py -n ansiblex {{.ANSIBLE_BUILD_OPTION}}
+      - for l in config console doc galaxy inventory playbook pull vault;do pyinstaller ansible-$l/__main__.py -n ansible-$l {{.ANSIBLE_BUILD_OPTION}};done
+    dir: tools/ansible-portable
+
+  docker-pyinstaller-build:
+    cmds:
+      - docker build -t pepodev/pyinstaller .
+    dir: tools/ansible-portable
+
+  ansible-build-docker:
+    cmds:
+      - docker run -it --rm -v $PWD:/opt pepodev/pyinstaller "pyinstaller ansible/__main__.py -n ansiblex {{.ANSIBLE_BUILD_OPTION}}"
+      - docker run -it --rm -v $PWD:/opt pepodev/pyinstaller "for l in config console doc galaxy inventory playbook pull vault;do pyinstaller ansible-$l/__main__.py -n ansible-$l {{.ANSIBLE_BUILD_OPTION}};done"
+    dir: tools/ansible-portable
 
   go-test:
     cmds:
