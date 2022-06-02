@@ -23,10 +23,10 @@ tasks:
       - docker build -t pepodev/pyinstaller .
     dir: tools/ansible-portable
 
-  ansible-build-docker:
+  docker-build-ansible:
     cmds:
       - docker run -it --rm -v $PWD:/opt pepodev/pyinstaller "pyinstaller ansible/__main__.py -n ansiblex {{.ANSIBLE_BUILD_OPTION}}"
-      - docker run -it --rm -v $PWD:/opt pepodev/pyinstaller "for l in config console doc galaxy inventory playbook pull vault;do pyinstaller ansible-$l/__main__.py -n ansible-$l {{.ANSIBLE_BUILD_OPTION}};done"
+      # - docker run -it --rm -v $PWD:/opt pepodev/pyinstaller "for l in config console doc galaxy inventory playbook pull vault;do pyinstaller ansible-$l/__main__.py -n ansible-$l {{.ANSIBLE_BUILD_OPTION}};done"
     dir: tools/ansible-portable
 
   go-test:

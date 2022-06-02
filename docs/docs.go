@@ -1,6 +1,6 @@
-//go:build tools
+//go:build docs
 
-package tools
+package docs
 
 import (
 	// Documentation generation

@@ -2,70 +2,64 @@ package ansible
 
 import (
 	"embed"
-	"log"
-	"syscall"
-	"unsafe"
+	"fmt"
+	"os"
+	"os/exec"
 )
 
-//go:embed ansible
+//go:generate rm -rf ./dist
+//go:generate cp -r ../../tools/ansible-portable/dist ./dist/
+//go:embed dist/*
 var ansibleFs embed.FS
 
-func init() {
-	ansibleFs.ReadFile("hello.txt")
+type ansible struct {
+	tmpDir string
 }
 
-func run() {
-	fd, err := MemFsCreate("/file.bin")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = CopyToMem(fd, ansibleFs)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = ExecveAt(fd)
-	if err != nil {
-		log.Fatal(err)
+func NewAnsible() *ansible {
+	return &ansible{
+		tmpDir: "/tmp/ansible",
 	}
 }
 
-func ExecveAt(fd uintptr) (err error) {
-	s, err := syscall.BytePtrFromString("")
-	if err != nil {
-		return err
-	}
-	ret, _, errno := syscall.Syscall6(322, fd, uintptr(unsafe.Pointer(s)), 0, 0, 0x1000, 0)
-	if int(ret) == -1 {
-		return errno
+func (an *ansible) Run(command string, args ...string) (string, error) {
+	if !validAnsibleCommand(command) {
+		return "", fmt.Errorf("invalid ansible command: %s", command)
 	}
 
-	// never hit
-	log.Println("should never hit")
-	return err
+	bin, err := ansibleFs.ReadFile(fmt.Sprintf("dist/%s", command))
+	if err != nil {
+		return "", err
+	}
+
+	pathFile := fmt.Sprintf("%s/%s", an.tmpDir, command)
+	err = os.WriteFile(pathFile, bin, 0755)
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command(pathFile, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", err
+	}
+
+	return string(output), nil
 }
 
-func CopyToMem(fd uintptr, buf []byte) (err error) {
-	_, err = syscall.Write(int(fd), buf)
-	if err != nil {
-		return err
+func validAnsibleCommand(command string) bool {
+	avaliableCommands := map[string]bool{
+		"ansiblex":          true,
+		"ansible-config":    true,
+		"ansible-console":   true,
+		"ansible-doc":       true,
+		"ansible-galaxy":    true,
+		"ansible-inventory": true,
+		"ansible-playbook":  true,
+		"ansible-pull":      true,
+		"ansible-vault":     true,
 	}
 
-	return nil
-}
-
-func MemFsCreate(path string) (r1 uintptr, err error) {
-	s, err := syscall.BytePtrFromString(path)
-	if err != nil {
-		return 0, err
-	}
-
-	r1, _, errno := syscall.Syscall(319, uintptr(unsafe.Pointer(s)), 0, 0)
-
-	if int(r1) == -1 {
-		return r1, errno
-	}
-
-	return r1, nil
+	_, ok := avaliableCommands[command]
+	return ok
 }
